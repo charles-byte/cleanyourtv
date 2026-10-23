@@ -2,6 +2,7 @@
   "dock_apps": [
     "com.google.android.youtube.tv",
     "com.netflix.ninja",
+    "com.todtv.tod",
     "com.amazon.amazonvideo.livingroom",
     "com.apple.atve.androidtv.appletv"
   ],
@@ -19,5 +20,7 @@
   "weather_latitude": -1.1019,
   "weather_longitude": 37.0144,
   "sports_row": true,
-  "sports_team": "Man Utd"
+  "sports_team": "Man Utd",
+  "stock_home_redirect": "com.google.android.apps.tv.launcherx",
+  "key_filter": false
 }
