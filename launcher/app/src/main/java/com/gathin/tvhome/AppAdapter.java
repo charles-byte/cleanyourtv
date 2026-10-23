@@ -59,10 +59,12 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         /** Hold OK on a tile: the activity shows the tile menu (move, remove from Home, app info). */
         void onTileLongPress(int position, View card);
         void onLibraryUp();
+        /** OK on the All apps tile (Extras all_apps_tile). */
+        void onAllAppsRequested();
     }
 
     static final class Entry {
-        static final int APP = 0, HOME_SETTINGS = 1, CARD = 2, EMPTY = 3;
+        static final int APP = 0, HOME_SETTINGS = 1, CARD = 2, EMPTY = 3, ALL_APPS = 4;
 
         final int kind;
         final String label;
@@ -195,6 +197,8 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final boolean animations;
     private final boolean advancedEffects;
     private final boolean showLibrary;
+    /** Extras all_apps_tile: the last dock slot opens the App library. */
+    private final boolean allAppsTile;
     /** Packages with a leanback entry at the last reload(): their tiles launch with the leanback category. */
     private Set<String> leanbackPackages = new HashSet<>();
     private final boolean showHomeSettings;
@@ -222,6 +226,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         this.advancedEffects = cfg.animations && cfg.advancedEffects;
         this.showHomeSettings = cfg.showHomeSettingsShortcut;
         this.showLibrary = cfg.appLibrary;
+        this.allAppsTile = cfg.extras != null && cfg.extras.allAppsTile;
         this.reducedMotion = cfg.reducedMotion;
         this.focusOvershoot = cfg.focusOvershoot;
         this.rowsBelowDock = cfg.rowsBelowDock;
@@ -320,6 +325,17 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         for (int i = 0; i < emptySlots; i++) {
             fresh.add(docked + i, new Entry(Entry.EMPTY, "", new ComponentName(ctx, "empty-dock-slot-" + i),
                     null, null, null, 0));
+        }
+        // The All apps tile takes the last dock slot (an empty one if there is one there); the app it displaces
+        // leads the grid. Left out while reordering, so only apps move.
+        if (allAppsTile && dockRow && !reordering) {
+            int at = Math.min(dockSize - 1, fresh.size());
+            if (at < fresh.size() && fresh.get(at).kind == Entry.EMPTY) {
+                fresh.remove(at);
+                emptySlots--;
+            }
+            fresh.add(at, new Entry(Entry.ALL_APPS, ctx.getString(R.string.all_apps),
+                    new ComponentName(ctx, "all-apps-tile"), null, ctx.getDrawable(R.drawable.ic_apps), null, 0));
         }
         items.clear();
         items.addAll(fresh);
@@ -451,6 +467,11 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             h.label.setVisibility(View.VISIBLE);
         }
         h.card.setOnClickListener(v -> launch(e));
+        if (e.kind == Entry.ALL_APPS) {
+            // Not an app: nothing to move, remove or show App info for.
+            h.card.setOnLongClickListener(v -> true);
+            return;
+        }
         h.card.setOnLongClickListener(v -> {
             if (tileMenu) {
                 int pos = h.getBindingAdapterPosition();
@@ -469,6 +490,10 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     /** Opens the tile's activity by explicit component, with no extras: a card can name nothing else. */
     private void launch(Entry e) {
+        if (e.kind == Entry.ALL_APPS) {
+            listener.onAllAppsRequested();
+            return;
+        }
         if (e.kind == Entry.HOME_SETTINGS) {
             ctx.startActivity(new Intent(ctx, HomeSettingsActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
@@ -555,7 +580,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         List<String> keys = new ArrayList<>();
         for (int i = 0; i < movableCount(); i++) {
             Entry e = items.get(i);
-            if (e.kind != Entry.EMPTY) keys.add(e.component.flattenToShortString());
+            if (e.kind != Entry.EMPTY && e.kind != Entry.ALL_APPS) keys.add(e.component.flattenToShortString());
         }
         return keys;
     }
@@ -583,6 +608,12 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         for (int i = 0; i < items.size(); i++) {
             if (items.get(i).component.flattenToShortString().equals(key)) return i;
         }
+        return -1;
+    }
+
+    /** Position of the All apps tile, or -1 when it is off. */
+    int allAppsPosition() {
+        for (int i = 0; i < items.size(); i++) if (items.get(i).kind == Entry.ALL_APPS) return i;
         return -1;
     }
 

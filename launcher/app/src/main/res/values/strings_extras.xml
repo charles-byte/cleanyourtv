@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Text for this fork's additions; English only. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="all_apps">All apps</string>
+    <string name="up_next">Up next</string>
+    <string name="series_f1">Formula 1</string>
+    <string name="series_motogp">MotoGP</string>
+    <string name="session_race">Race</string>
+    <string name="session_sprint">Sprint</string>
+    <string name="session_kickoff">Kick-off</string>
+    <string name="live">LIVE</string>
+    <string name="in_hours_minutes">in %1$d h %2$d m</string>
+    <string name="in_minutes">in %1$d m</string>
+    <string name="update_failed">Update failed</string>
+    <string name="input_not_found">HDMI %1$d not found</string>
+</resources>

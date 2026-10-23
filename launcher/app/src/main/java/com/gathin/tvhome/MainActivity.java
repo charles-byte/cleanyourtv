@@ -339,6 +339,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         public void run() {
             updateGreeting();
             updateRace();
+            extras.tick();
             // The pill follows the network callbacks and each return to Home; only the diya's flame follows the
             // signal level, so only it needs this minute's binder calls (about 7 ms on the UI thread).
             if (festive) updateWifiLabel();
@@ -519,6 +520,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     AnimationUtils.loadAnimation(this, R.anim.tile_enter), 0.06f));
         }
         adapter = new AppAdapter(this, this, COLUMNS, cfg);
+        extras = new HomeExtras(this, cfg.extras, root, grid, COLUMNS, density, dockRow);
+        if (extras.sportsRoomPx() > 0) grid.addItemDecoration(extras.roomDecoration());
         dockApps = cfg.dockApps;
         fillDockLeavesSlots = !cfg.fillDock;
         Order savedOrder = Order.load(Order.file(this));
@@ -539,7 +542,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             // Keep the hero below the header when the library is enabled on a short screen,
             // even when the theme requests an extra visible row below the dock.
             int shelfClearance = cfg.appLibrary ? hero.getMeasuredHeight() + (int) (40 * density) : 0;
-            int want = Math.max(shelfClearance, h - dockRow - gridRows - (int) (AppAdapter.BOTTOM_ROOM_DP * density));
+            int want = Math.max(shelfClearance, h - dockRow - gridRows - (int) (AppAdapter.BOTTOM_ROOM_DP * density)
+                    - extras.sportsRoomPx());
             // Where the rows cannot fit even at the smallest tile (3 rows with the title on), the title keeps its
             // room above the dock and the last rows run off the bottom instead of the title drawing over the clock.
             if (MainActivity.this.dockRow && cfg.dockTitle && rowsBelowDock > 0) want = Math.max(want, (int) (AppAdapter.TITLE_ROOM_DP * density));
@@ -592,6 +596,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnInputs = findViewById(R.id.btnInputs);
         View btnSettings = findViewById(R.id.btnSettings);
         btnInputs.setOnClickListener(v -> showInputs());
+        extras.setupInputsPill((TextView) btnInputs, this::openInput, this::showInputs);
         btnWifi.setOnClickListener(v -> openNetworkPill());
         btnWifi.setOnLongClickListener(v -> {
             open(systemIntent(Settings.ACTION_WIFI_SETTINGS));
@@ -842,6 +847,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (openLiveTvAfterBoot()) return;
         updateGreeting();
         updateRace();
+        extras.tick();
         // The network and Inputs pills keep their state while Home is in the background, and callbacks update them
         // when the network or the inputs change, so this refresh only catches anything missed. Its binder calls
         // (about 7 ms on a TCL C755, most of it WifiManager.getConnectionInfo) would hold up the first frame back
@@ -1454,11 +1460,18 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     // ---- glass highlight -------------------------------------------------------------------------
 
     @Override
+    public void onAllAppsRequested() {
+        onLibraryRequested();
+        libraryFromDock = true;   // closing it goes back to the tile, not to the pill after the last row
+    }
+
+    @Override
     public void onLibraryRequested() {
         if (appLibrary != null) appLibrary.close();
         if (openPopup != null) openPopup.dismiss();
         libraryFocusPending = false;
         libraryFromTopBar = false;
+        libraryFromDock = false;
         appLibrary = new AppLibraryDialog(this, animations, reducedMotion, appLibrarySelection, adapter::containsPackage, () -> reloadApps(false), () -> {
             appLibrary = null;
             openPopup = null;
@@ -1466,6 +1479,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 libraryFromTopBar = false;
                 btnLibraryTop.requestFocus();
                 return;
+            }
+            if (libraryFromDock) {
+                libraryFromDock = false;
+                int tile = adapter.allAppsPosition();
+                if (tile >= 0) {
+                    focusTile(tile);
+                    return;
+                }
             }
             libraryFocusPending = true;
             grid.post(() -> {
@@ -2469,6 +2490,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private View btnLibraryTop;
     /** The open library came from that button: closing it returns there instead of scrolling to the grid's end. */
     private boolean libraryFromTopBar;
+    /** The App library was opened from the All apps tile: closing it goes back to that tile. */
+    private boolean libraryFromDock;
+    /** This fork's additions: weather, the "Up next" row and the one-press HDMI pill (HomeExtras). */
+    private HomeExtras extras;
 
     /** Turns a labelled top pill into the round TopButtonIcon shape: no text, the icon centred by even padding. */
     private void makeIconOnly(TextView pill) {

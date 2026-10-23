@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This fork's additions (Extras.java). Everything is off by default; a theme's config.json turns each on with
+     the same key. -->
+<resources>
+    <!-- The last dock slot becomes an "All apps" tile that opens the App library (needs app_library). -->
+    <bool name="all_apps_tile">false</bool>
+    <!-- The Inputs pill switches straight to this HDMI port (1 to 4) instead of opening the inputs menu; 0 keeps the
+         menu. Hold OK on the pill still opens the menu. inputs_pill_label replaces "Inputs" (e.g. "PS5"). -->
+    <integer name="inputs_pill_port">0</integer>
+    <string name="inputs_pill_label" translatable="false"></string>
+    <!-- Weather in the header, from Open-Meteo (no key): a place name and its coordinates. Empty keeps it off. -->
+    <string name="weather_place" translatable="false"></string>
+    <string name="weather_latitude" translatable="false"></string>
+    <string name="weather_longitude" translatable="false"></string>
+    <!-- "Up next" row above the dock: the next F1 race, MotoGP weekend and the team's next match. -->
+    <bool name="sports_row">false</bool>
+    <string name="sports_team" translatable="false">Man Utd</string>
+    <string name="sports_team_ics" translatable="false">https://pub.fotmob.com/prod/pub/api/v2/calendar/team/10260.ics</string>
+</resources>

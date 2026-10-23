@@ -1,0 +1,23 @@
+{
+  "dock_apps": [
+    "com.google.android.youtube.tv",
+    "com.netflix.ninja",
+    "com.amazon.amazonvideo.livingroom",
+    "com.apple.atve.androidtv.appletv"
+  ],
+  "columns": 6,
+  "rows_below_dock": 0,
+  "background_color": "#000000",
+  "wallpaper": false,
+  "show_network_pill": false,
+  "tile_menu": true,
+  "app_library": true,
+  "all_apps_tile": true,
+  "inputs_pill_port": 1,
+  "inputs_pill_label": "PS5",
+  "weather_place": "Juja",
+  "weather_latitude": -1.1019,
+  "weather_longitude": 37.0144,
+  "sports_row": true,
+  "sports_team": "Man Utd"
+}
