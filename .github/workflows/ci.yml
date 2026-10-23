@@ -48,4 +48,5 @@ jobs:
         run: |
           size=$(stat -c %s launcher/app/build/outputs/apk/release/app-release.apk)
           echo "release APK: $((size / 1024)) KB"
-          test "$size" -lt 491520 || { echo "APK is over 480 KB; the launcher targets 1 GB TVs, keep it small"; exit 1; }
+          # This fork's weather and sports feeds add a little; upstream's limit is 480 KB (491520).
+          test "$size" -lt 573440 || { echo "APK is over 560 KB; the launcher targets 1 GB TVs, keep it small"; exit 1; }
