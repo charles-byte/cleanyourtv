@@ -16,4 +16,6 @@
     <bool name="sports_row">false</bool>
     <string name="sports_team" translatable="false">Man Utd</string>
     <string name="sports_team_ics" translatable="false">https://pub.fotmob.com/prod/pub/api/v2/calendar/team/10260.ics</string>
+    <!-- The team's own ground: its card says "Home - <venue>" there and "Away - <venue>" anywhere else. -->
+    <string name="sports_team_home_venue" translatable="false">Old Trafford</string>
 </resources>

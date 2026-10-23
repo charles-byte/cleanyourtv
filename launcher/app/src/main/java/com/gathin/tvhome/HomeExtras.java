@@ -44,8 +44,8 @@ final class HomeExtras {
     private static final String TAG = "TvHomeExtras";
     private static final int ACCENT = 0xFFF2A93B;
     private static final long WEATHER_EVERY = 30 * 60_000L, SPORTS_EVERY = 6 * 3600_000L, RETRY_AFTER = 15 * 60_000L;
-    /** Height of the "Up next" row: its label, the gap and a card. */
-    private static final float ROW_DP = 128, CARD_DP = 98;
+    /** Height of the "Up next" row: its label, the gap, a card and the space above the grid's next row. */
+    private static final float ROW_DP = 144, CARD_DP = 98;
 
     private final Activity activity;
     private final Extras x;
@@ -322,7 +322,8 @@ final class HomeExtras {
             c.view.setPadding(dp(16), dp(12), dp(16), dp(12));
             TextView kicker = text(10, R.font.outfit_medium, 0x8CFFFFFF, 0.2f);
             kicker.setAllCaps(true);
-            kicker.setText(c.series);
+            // "MAN UTD GAMES" with the ball after it; renderPanel strips the feed's own from the lines below.
+            kicker.setText(SportsFeed.TEAM.equals(c.key) ? c.series + " Games  ⚽" : c.series);
             c.view.addView(kicker);
             c.title = text(16, R.font.outfit_regular, 0xFFFFFFFF, 0f);
             LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -397,18 +398,34 @@ final class HomeExtras {
             }
             hasContent = true;
             c.view.setVisibility(View.VISIBLE);
-            c.title.setText(e.title);
-            c.detail.setText(failed ? activity.getString(R.string.update_failed) : e.detail);
+            c.title.setText(noBall(e.title));
+            c.detail.setText(failed ? activity.getString(R.string.update_failed)
+                    : SportsFeed.TEAM.equals(c.key) ? venueLine(e.detail) : noBall(e.detail));
             c.view.setAlpha(failed ? 0.5f : 1f);
             boolean first = true;
             for (SportsFeed.Session s : e.sessions) {
                 if (!now.isBefore(s.start.plus(s.live))) continue;   // already over
+                // Sprint and race don't both fit on the MotoGP card: race only.
+                if (SportsFeed.MOTOGP.equals(c.key) && "sprint".equals(s.kind)) continue;
                 addTime(c.times, s, now, first);
                 first = false;
             }
         }
         if (!hasContent) hasContent = anyFailed();
         place();
+    }
+
+    /** The text without the football FotMob puts in its calendar lines (the card's kicker carries one). */
+    private static String noBall(String s) {
+        return s.replace("⚽️", "").replace("⚽", "").trim();
+    }
+
+    /** "Home - Old Trafford" at the team's own ground (sports_team_home_venue), else "Away - <venue>". */
+    private String venueLine(String venue) {
+        if (venue.isEmpty()) return "";
+        String home = activity.getString(R.string.sports_team_home_venue);
+        boolean atHome = !home.isEmpty() && venue.toLowerCase(Locale.ROOT).contains(home.toLowerCase(Locale.ROOT));
+        return (atHome ? "Home - " : "Away - ") + venue;
     }
 
     private boolean anyFailed() {

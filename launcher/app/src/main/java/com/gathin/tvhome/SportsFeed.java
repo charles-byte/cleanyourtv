@@ -27,7 +27,8 @@ import java.util.Map;
 final class SportsFeed {
     private SportsFeed() { }
 
-    static final String F1 = "f1", MOTOGP = "motogp", TEAM = "team";
+    // "team2": the team card's cached text from before the venue line is dropped, so it is fetched again.
+    static final String F1 = "f1", MOTOGP = "motogp", TEAM = "team2";
 
     static final class Session {
         /** "race", "sprint" or "kickoff"; the view picks the words. */
@@ -235,7 +236,15 @@ final class SportsFeed {
         Map<String, String> params = null;
         Event best = null;
         Instant bestStart = null;
+        boolean inAlarm = false;
         for (String line : lines) {
+            // FotMob nests a reminder in every match whose SUMMARY and DESCRIPTION ("... starting in 15 minutes")
+            // would otherwise overwrite the match's own.
+            if (line.equals("BEGIN:VALARM")) inAlarm = true;
+            if (inAlarm) {
+                if (line.equals("END:VALARM")) inAlarm = false;
+                continue;
+            }
             if (line.equals("BEGIN:VEVENT")) {
                 ev = new HashMap<>();
                 params = new HashMap<>();
@@ -250,9 +259,11 @@ final class SportsFeed {
                 if (start != null && !friendly && now.isBefore(start.plus(live))
                         && (bestStart == null || start.isBefore(bestStart))) {
                     bestStart = start;
-                    String detail = firstLine(description);
-                    if (detail.isEmpty()) detail = unescape(ev.getOrDefault("LOCATION", ""));
-                    best = new Event(matchTitle(summary, team), detail,
+                    // The venue: LOCATION is "Old Trafford, Sir Matt Busby Way, Manchester, GBR".
+                    String venue = unescape(ev.getOrDefault("LOCATION", ""));
+                    int comma = venue.indexOf(',');
+                    if (comma >= 0) venue = venue.substring(0, comma).trim();
+                    best = new Event(matchTitle(summary, team), venue,
                             Collections.singletonList(new Session("kickoff", start, live)));
                 }
                 ev = null;
@@ -312,14 +323,9 @@ final class SportsFeed {
         return s.replace("\\n", "\n").replace("\\N", "\n").replace("\\,", ",").replace("\\;", ";").replace("\\\\", "\\").trim();
     }
 
-    private static String firstLine(String s) {
-        int nl = s.indexOf('\n');
-        return (nl < 0 ? s : s.substring(0, nl)).trim();
-    }
-
-    /** "Manchester United - Chelsea" -> "Man Utd v Chelsea", with the team's short name. */
+    /** "Manchester United - Chelsea" -> "Man Utd Vs Chelsea", with the team's short name. */
     static String matchTitle(String summary, String team) {
-        String t = summary.replace(" - ", " v ").replace(" vs. ", " v ").replace(" vs ", " v ");
+        String t = summary.replace(" - ", " Vs ").replace(" vs. ", " Vs ").replace(" vs ", " Vs ");
         if (!team.isEmpty()) t = t.replace("Manchester United", team).replace("Manchester Utd", team);
         return t.trim();
     }

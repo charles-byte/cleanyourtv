@@ -1,7 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- An "Up next" card: the dock band's colours. -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#E6141518" />
-    <stroke android:width="1dp" android:color="#1FFFFFFF" />
-    <corners android:radius="14dp" />
-</shape>
+<!-- An "Up next" card as mirror glass without blur: a see-through grey base, a sheen fading down from the top, a faint
+     diagonal reflection and a bright hairline edge, like the Inputs and Settings pills. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#992A2C31" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="270" android:startColor="#2EFFFFFF" android:centerColor="#0DFFFFFF"
+                android:endColor="#05FFFFFF" android:centerY="0.45" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="315" android:startColor="#00FFFFFF" android:centerColor="#12FFFFFF"
+                android:endColor="#00FFFFFF" android:centerX="0.3" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <stroke android:width="1dp" android:color="#40FFFFFF" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+</layer-list>
