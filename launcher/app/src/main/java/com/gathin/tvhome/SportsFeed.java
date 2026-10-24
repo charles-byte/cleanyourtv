@@ -27,8 +27,9 @@ import java.util.Map;
 final class SportsFeed {
     private SportsFeed() { }
 
-    // "team2": the team card's cached text from before the venue line is dropped, so it is fetched again.
-    static final String F1 = "f1", MOTOGP = "motogp", TEAM = "team2";
+    // "motogp2" and "team2": cached results from before the event-choice and venue fixes are dropped, so both
+    // are fetched again.
+    static final String F1 = "f1", MOTOGP = "motogp2", TEAM = "team2";
 
     static final class Session {
         /** "race", "sprint" or "kickoff"; the view picks the words. */
@@ -128,11 +129,14 @@ final class SportsFeed {
             if (s.optBoolean("current")) season = s.getString("id");
         }
         if (season == null) return null;
-        JSONArray events = new JSONArray(Net.get(MOTOGP_API + "events?seasonUuid=" + season + "&isFinished=false"));
+        // Not isFinished=false: the API counts the weekend in progress (status CURRENT) as finished, so the card
+        // skipped straight to the next round while a race was still to come. The earliest event not FINISHED.
+        JSONArray events = new JSONArray(Net.get(MOTOGP_API + "events?seasonUuid=" + season));
         JSONObject event = null;
-        for (int i = 0; i < events.length() && event == null; i++) {
+        for (int i = 0; i < events.length(); i++) {
             JSONObject e = events.getJSONObject(i);
-            if (!e.optBoolean("test")) event = e;
+            if (e.optBoolean("test") || "FINISHED".equals(e.optString("status"))) continue;
+            if (event == null || e.optString("date_start").compareTo(event.optString("date_start")) < 0) event = e;
         }
         if (event == null) return null;
         String eventId = event.getString("id");
