@@ -451,20 +451,30 @@ final class HomeExtras {
             return;
         }
         TextView when = text(12, R.font.outfit_medium, 0xFFFFFFFF, 0f);
-        Duration until = Duration.between(now, s.start);
-        if (until.compareTo(Duration.ofHours(24)) <= 0) {
-            long minutes = (until.toMillis() + 59_999) / 60_000;   // never "in 0 m" before the start
-            when.setText(minutes >= 60
-                    ? activity.getString(R.string.in_hours_minutes, (int) (minutes / 60), (int) (minutes % 60))
-                    : activity.getString(R.string.in_minutes, (int) minutes));
-            when.setTextColor(ACCENT);
-        } else {
-            boolean h24 = android.text.format.DateFormat.is24HourFormat(activity);
-            DateTimeFormatter f = DateTimeFormatter.ofPattern(h24 ? "EEE d MMM · HH:mm" : "EEE d MMM · h:mm a",
-                    Locale.getDefault()).withZone(ZoneId.systemDefault());
-            when.setText(f.format(s.start));
-        }
+        boolean h24 = android.text.format.DateFormat.is24HourFormat(activity);
+        DateTimeFormatter f = DateTimeFormatter.ofPattern(h24 ? "EEE d MMM · HH:mm" : "EEE d MMM · h:mm a",
+                Locale.getDefault()).withZone(ZoneId.systemDefault());
+        when.setText(f.format(s.start));
         times.addView(when, vlp);
+
+        // On the motorsport cards, within 24 hours, the countdown follows the date; it is left out when the line has
+        // no room for it. The team's kick-off keeps the date alone.
+        Duration until = Duration.between(now, s.start);
+        if ("kickoff".equals(s.kind) || until.compareTo(Duration.ofHours(24)) > 0) return;
+        long minutes = (until.toMillis() + 59_999) / 60_000;   // never "in 0 m" before the start
+        TextView countdown = text(12, R.font.outfit_medium, ACCENT, 0f);
+        countdown.setSingleLine(true);
+        countdown.setText(minutes >= 60
+                ? activity.getString(R.string.in_hours_minutes, (int) (minutes / 60), (int) (minutes % 60))
+                : activity.getString(R.string.in_minutes, (int) minutes));
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        ilp.setMarginStart(dp(14));
+        times.addView(countdown, ilp);
+        countdown.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+            if (countdown.getVisibility() == View.VISIBLE && countdown.getPaint().measureText(countdown.getText().toString()) > countdown.getWidth()) {
+                countdown.post(() -> countdown.setVisibility(View.GONE));
+            }
+        });
     }
 
     private String sessionLabel(String kind) {
